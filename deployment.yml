@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ep-portal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ep-portal
+  template:
+    metadata:
+      labels:
+        app: ep-portal
+    spec:
+      containers:
+      - name: ep-portal
+        image: {{image}}
+        ports:
+          - containerPort: 80
+        livenessProbe:      # Used by deployment controller
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:     # Used by Ingress/GCLB
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        resources:
+          limits:
+            memory: 1024Mi
+          requests:
+            memory: 512Mi

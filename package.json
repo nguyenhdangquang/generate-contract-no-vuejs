@@ -1,0 +1,97 @@
+{
+  "name": "epayment-portal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve --mode local",
+    "serve:dev": "vue-cli-service serve --mode development",
+    "serve:stg": "vue-cli-service serve --mode staging",
+    "serve:prod": "vue-cli-service serve --mode production",
+    "build": "vue-cli-service build",
+    "build:dev": "vue-cli-service build --mode development",
+    "build:stg": "vue-cli-service build --mode staging",
+    "build:prod": "vue-cli-service build --mode production",
+    "test:unit": "vue-cli-service test:unit",
+    "test:unit:coverage": "nyc vue-cli-service test:unit",
+    "test:e2e": "vue-cli-service test:e2e",
+    "testUT": "mocha",
+    "testUT:coverage": "nyc --reporter=html mocha",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "bootstrap": "^4.6.0",
+    "core-js": "^3.6.5",
+    "moment": "^2.29.1",
+    "moment-timezone": "^0.5.33",
+    "portal-vue": "^2.1.7",
+    "validator": "^13.6.0",
+    "vue": "^2.6.11",
+    "vue-meta": "^2.4.0",
+    "vue-router": "^3.2.0",
+    "vue-uuid": "^2.0.2",
+    "vuex": "^3.4.0",
+    "xlsx": "^0.17.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-e2e-cypress": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-plugin-unit-mocha": "~4.5.0",
+    "@vue/cli-plugin-vuex": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "@vue/eslint-config-standard": "^5.1.2",
+    "@vue/test-utils": "^1.0.3",
+    "babel-eslint": "^10.1.0",
+    "babel-plugin-istanbul": "^6.0.0",
+    "chai": "^4.1.2",
+    "eslint": "^6.7.2",
+    "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "eslint-plugin-vue": "^6.2.2",
+    "mocha": "^8.2.1",
+    "nyc": "^15.1.0",
+    "sass": "^1.26.5",
+    "sass-loader": "^8.0.2",
+    "sinon": "^9.2.4",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true,
+      "browser": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "@vue/standard"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {},
+    "overrides": [
+      {
+        "files": [
+          "**/__tests__/*.{j,t}s?(x)",
+          "**/tests/unit/**/*.spec.{j,t}s?(x)"
+        ],
+        "env": {
+          "mocha": true
+        }
+      }
+    ]
+  },
+  "browserslist": [
+    "ie >= 11",
+    "last 1 chrome version",
+    "last 1 firefox version",
+    "last 1 safari version",
+    "last 1 edge version",
+    "last 1 ios_saf version",
+    "last 1 and_chr version"
+  ]
+}

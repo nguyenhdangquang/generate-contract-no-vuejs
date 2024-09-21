@@ -1,0 +1,116 @@
+image: node:current-alpine3.13
+options:
+  docker: true
+  size: 2x
+
+definitions:
+  steps:
+    - step: &build-test
+        name: Build, test
+        caches:
+          - node
+        script:
+          - export NODE_OPTIONS=--openssl-legacy-provider
+          - npm install
+          - npm audit --audit-level=critical
+          - npm run test:unit:coverage
+        artifacts:
+          - coverage/**
+
+    - step: &sonarqube-analysis
+        name: SonarQube Analysis
+        image: newtmitch/sonar-scanner:latest
+        script:
+          - sonar-scanner -Dsonar.projectBaseDir=$(pwd)
+            -Dproject.settings=sonar.properties
+            -Dsonar.projectKey=epayment-ep-portal
+            -Dsonar.projectName="epayment-ep-portal"
+            -Dsonar.exclusions=**/node_modules/**/*,**/migrations/**/*
+            -Dsonar.coverage.exclusions=**/__tests__/**
+            -Dsonar.sources=src
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.branch.name=$BITBUCKET_BRANCH 
+            -Dsonar.login=$SONAR_LOGIN 
+            -Dsonar.host.url=$SONAR_URL
+
+    - step: &pr-sonarqube-analysis
+        name: Pull Request SonarQube Analysis
+        image: newtmitch/sonar-scanner:latest
+        script:
+          - sonar-scanner -Dsonar.projectBaseDir=$(pwd)
+            -Dproject.settings=sonar.properties
+            -Dsonar.projectKey=epayment-ep-portal
+            -Dsonar.projectName="epayment-ep-portal"
+            -Dsonar.exclusions=**/node_modules/**/*,**/migrations/**/*
+            -Dsonar.coverage.exclusions=**/__tests__/**/*
+            -Dsonar.sources=src
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.login=$SONAR_LOGIN
+            -Dsonar.host.url=$SONAR_URL
+            -Dsonar.pullrequest.key=$BITBUCKET_PR_ID
+            -Dsonar.pullrequest.branch=$BITBUCKET_BRANCH
+            -Dsonar.pullrequest.base=dev/release-2
+
+    - step: &deploy
+        name: Deploy
+        image: google/cloud-sdk:latest
+        deployment: Development
+        size: 2x
+        script:
+          - export IMAGE_NAME=asia.gcr.io/$DOCKER_IMAGE_REPOSITORY/ep-portal:$BITBUCKET_COMMIT
+          - docker build -t $IMAGE_NAME --build-arg BUILD_TAG=$BUILD_TAG .
+          - docker login -u $DOCKER_USERNAME -p "$DOCKER_PASSWORD" https://asia.gcr.io
+          - docker push $IMAGE_NAME
+          - sed -i "s|{{image}}|$IMAGE_NAME|g" deployment.yml
+          - echo $KUBE_TOKEN | base64 --decode > ./kube_token
+          - echo $KUBE_CA | base64 --decode > ./kube_ca
+          - kubectl config set-cluster $KUBE_CLUSTER --server=$KUBE_SERVER --certificate-authority="$(pwd)/kube_ca"
+          - kubectl config set-credentials bitbucket --token="$(cat ./kube_token)"
+          - kubectl config set-context development --cluster=$KUBE_CLUSTER --user=bitbucket
+          - kubectl config use-context development
+          - kubectl apply -f deployment.yml
+
+pipelines:
+  pull-requests:
+    '**':
+      - step: *build-test
+      - step: *pr-sonarqube-analysis
+
+  branches:
+    dev/release*:
+      - step: *build-test
+      - step: *sonarqube-analysis
+      - step: *deploy
+
+    release/*:
+      - step: *build-test
+      - step: *sonarqube-analysis
+      - step:
+          <<: *deploy
+          name: Deploy to staging
+          deployment: Staging
+      - step:
+          <<: *deploy
+          name: Deploy to production
+          deployment: Production
+          trigger: manual
+
+  custom: # Pipelines that can only be triggered manually
+    dependency-security-test:
+      - step:
+          name: Execute dependency security testing
+          script:
+            - npm install -g snyk
+            - snyk config set api=$SNYK_TOKEN
+            - snyk monitor --org=ocean-network-express
+
+    deploy-stage:
+      - step:
+          <<: *deploy
+          name: Deploy to staging
+          deployment: Staging
+          
+definitions:
+  services:
+    docker:
+      memory: 4096
